@@ -702,6 +702,121 @@
   }
   @keyframes toast-in{ from{opacity:0; transform:translateX(20px);} to{opacity:1; transform:translateX(0);} }
   @keyframes toast-out{ to{opacity:0; transform:translateX(20px);} }
+
+  /* LIKE WIDGET */
+  .like-widget{
+    position:fixed;
+    left:22px;
+    bottom:22px;
+    z-index:250;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:7px;
+  }
+  .like-btn{
+    position:relative;
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    background:var(--surface);
+    border:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 14px 34px -14px rgba(0,0,0,0.65);
+    transition:border-color 0.25s ease, transform 0.15s ease, background-color 0.4s ease;
+    animation:like-idle 3.4s ease-in-out infinite;
+  }
+  .like-btn:hover{ border-color:var(--accent); transform:translateY(-2px); }
+  .like-btn:active{ transform:translateY(0) scale(0.94); }
+  .like-btn:focus-visible{ outline:2px solid var(--accent-2); outline-offset:3px; }
+  .like-btn.liked{ border-color:var(--accent); cursor:default; animation:none; }
+  .like-btn.liked:hover{ transform:none; }
+  @keyframes like-idle{
+    0%,100%{ box-shadow:0 14px 34px -14px rgba(0,0,0,0.65), 0 0 0 0 rgba(242,183,5,0); }
+    50%{ box-shadow:0 14px 34px -14px rgba(0,0,0,0.65), 0 0 0 6px rgba(242,183,5,0.08); }
+  }
+  .like-icon{
+    width:20px;
+    height:20px;
+    fill:none;
+    stroke:var(--text-muted);
+    stroke-width:1.8;
+    transition:fill 0.3s ease, stroke 0.3s ease, transform 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .like-btn:hover .like-icon{ stroke:var(--accent); }
+  .like-btn.liked .like-icon{ fill:var(--accent); stroke:var(--accent); transform:scale(1.08); }
+  .like-btn.pop .like-icon{ animation:like-pop 0.5s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes like-pop{
+    0%{ transform:scale(1); }
+    35%{ transform:scale(1.5) rotate(-6deg); }
+    60%{ transform:scale(0.85) rotate(4deg); }
+    100%{ transform:scale(1.08) rotate(0); }
+  }
+  .like-ring{
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    border:1.5px solid var(--accent);
+    opacity:0;
+    pointer-events:none;
+  }
+  .like-btn.pop .like-ring{ animation:like-ring-burst 0.6s ease-out; }
+  @keyframes like-ring-burst{
+    0%{ opacity:0.7; transform:scale(1); }
+    100%{ opacity:0; transform:scale(1.9); }
+  }
+  .like-particle{
+    position:absolute;
+    left:50%;
+    top:4px;
+    transform:translateX(-50%);
+    font-family:var(--mono);
+    font-size:11px;
+    font-weight:600;
+    color:var(--accent);
+    pointer-events:none;
+    animation:like-float-up 0.9s ease-out forwards;
+  }
+  @keyframes like-float-up{
+    0%{ opacity:0; transform:translate(-50%, 0); }
+    20%{ opacity:1; }
+    100%{ opacity:0; transform:translate(-50%, -34px); }
+  }
+  .like-count-pill{
+    font-family:var(--mono);
+    background:var(--surface);
+    border:1px solid var(--border-soft);
+    border-radius:20px;
+    padding:3px 10px;
+    font-size:10.5px;
+    color:var(--text-dim);
+    display:flex;
+    align-items:center;
+    gap:4px;
+    white-space:nowrap;
+    transition:border-color 0.25s ease, color 0.25s ease;
+  }
+  .like-count-pill .n{
+    color:var(--text-muted);
+    font-weight:600;
+    transition:color 0.25s ease;
+    display:inline-block;
+  }
+  .like-count-pill.liked{ border-color:var(--accent-dim); }
+  .like-count-pill.liked .n{ color:var(--accent); }
+  .like-count-pill .n.bump{ animation:like-count-bump 0.4s ease; }
+  @keyframes like-count-bump{
+    0%{ transform:translateY(0) scale(1); }
+    40%{ transform:translateY(-6px) scale(1.3); }
+    100%{ transform:translateY(0) scale(1); }
+  }
+  @media (max-width:620px){
+    .like-widget{ left:14px; bottom:14px; }
+    .like-btn{ width:46px; height:46px; }
+  }
 </style>
 </head>
 <body>
@@ -1053,6 +1168,17 @@
 
 <div class="toast-container" id="toast-container"></div>
 
+<!-- LIKE WIDGET -->
+<div class="like-widget" id="like-widget">
+  <button class="like-btn" id="like-btn" type="button" aria-pressed="false" aria-label="Like this portfolio" title="INSERT INTO likes (visitor) VALUES (you);">
+    <span class="like-ring" aria-hidden="true"></span>
+    <svg class="like-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 21s-6.716-4.353-9.428-8.487C.98 9.828 1.69 5.8 5.2 4.36c2.31-.94 4.79-.02 6.8 2.6 2.01-2.62 4.49-3.54 6.8-2.6 3.51 1.44 4.22 5.47 2.63 8.153C18.716 16.647 12 21 12 21z" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+  </button>
+  <div class="like-count-pill" id="like-count-pill"><span>--</span><span class="n" id="like-count">0</span><span id="like-label">likes</span></div>
+</div>
+
 <script>
   /* ---------- helpers ---------- */
   function escapeHtml(s){
@@ -1110,6 +1236,81 @@
       showToast(label + ': ' + text);
     }
   }
+
+  /* ---------- like widget ---------- */
+  (function(){
+    var LIKES_KEY = 'nvp-likes-total';
+    var LIKED_SESSION_KEY = 'nvp-liked-session';
+    var SEED_LIKES = 214; // base count so the row doesn't start at zero
+
+    var btn = document.getElementById('like-btn');
+    var pill = document.getElementById('like-count-pill');
+    var countEl = document.getElementById('like-count');
+    if(!btn) return;
+
+    function getTotal(){
+      try{
+        var stored = localStorage.getItem(LIKES_KEY);
+        return stored === null ? SEED_LIKES : parseInt(stored, 10);
+      }catch(e){ return SEED_LIKES; }
+    }
+    function setTotal(n){
+      try{ localStorage.setItem(LIKES_KEY, String(n)); }catch(e){}
+    }
+    function hasLikedThisSession(){
+      try{ return sessionStorage.getItem(LIKED_SESSION_KEY) === '1'; }catch(e){ return false; }
+    }
+    function markLikedThisSession(){
+      try{ sessionStorage.setItem(LIKED_SESSION_KEY, '1'); }catch(e){}
+    }
+
+    function renderCount(n, animate){
+      countEl.textContent = n;
+      if(animate){
+        countEl.classList.remove('bump');
+        void countEl.offsetWidth;
+        countEl.classList.add('bump');
+      }
+    }
+
+    function setLikedUI(){
+      btn.classList.add('liked');
+      btn.setAttribute('aria-pressed', 'true');
+      btn.title = 'already inserted \u2014 thanks!';
+      pill.classList.add('liked');
+    }
+
+    function spawnParticle(){
+      var p = document.createElement('span');
+      p.className = 'like-particle';
+      p.textContent = '+1';
+      btn.appendChild(p);
+      setTimeout(function(){ p.remove(); }, 900);
+    }
+
+    // init from storage
+    var total = getTotal();
+    renderCount(total, false);
+    if(hasLikedThisSession()){
+      setLikedUI();
+    }
+
+    btn.addEventListener('click', function(){
+      if(hasLikedThisSession()) return;
+
+      total = getTotal() + 1;
+      setTotal(total);
+      markLikedThisSession();
+
+      btn.classList.remove('pop');
+      void btn.offsetWidth;
+      btn.classList.add('pop');
+      spawnParticle();
+      renderCount(total, true);
+      setLikedUI();
+      showToast('1 row inserted into likes \u2014 thank you!');
+    });
+  })();
 
   /* ---------- project filter chips ---------- */
   function selectChip(chip){
