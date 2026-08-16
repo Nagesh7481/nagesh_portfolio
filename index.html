@@ -1179,6 +1179,92 @@
   <div class="like-count-pill" id="like-count-pill"><span>--</span><span class="n" id="like-count">0</span><span id="like-label">likes</span></div>
 </div>
 
+<!-- Live, shared like counter (Firebase Firestore) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+  import { getFirestore, doc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAnykhKxZ1q5KA3BTyS5RrHzFxgX871tFM",
+    authDomain: "portfolio-d76e8.firebaseapp.com",
+    projectId: "portfolio-d76e8",
+    storageBucket: "portfolio-d76e8.firebasestorage.app",
+    messagingSenderId: "100508101666",
+    appId: "1:100508101666:web:5c9ab17dca69a887a36e7b"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const likesRef = doc(db, "stats", "likes");
+
+  const LIKED_SESSION_KEY = 'nvp-liked-session';
+
+  const btn = document.getElementById('like-btn');
+  const pill = document.getElementById('like-count-pill');
+  const countEl = document.getElementById('like-count');
+
+  function hasLikedThisSession(){
+    try{ return sessionStorage.getItem(LIKED_SESSION_KEY) === '1'; }catch(e){ return false; }
+  }
+  function markLikedThisSession(){
+    try{ sessionStorage.setItem(LIKED_SESSION_KEY, '1'); }catch(e){}
+  }
+  function renderCount(n, animate){
+    countEl.textContent = n;
+    if(animate){
+      countEl.classList.remove('bump');
+      void countEl.offsetWidth;
+      countEl.classList.add('bump');
+    }
+  }
+  function setLikedUI(){
+    btn.classList.add('liked');
+    btn.setAttribute('aria-pressed', 'true');
+    btn.title = 'already inserted \u2014 thanks!';
+    pill.classList.add('liked');
+  }
+  function spawnParticle(){
+    const p = document.createElement('span');
+    p.className = 'like-particle';
+    p.textContent = '+1';
+    btn.appendChild(p);
+    setTimeout(function(){ p.remove(); }, 900);
+  }
+
+  // Real-time listener: every visitor's count updates live, no refresh needed.
+  onSnapshot(likesRef, function(snap){
+    if(snap.exists()){
+      renderCount(snap.data().count || 0, false);
+    }
+  }, function(err){
+    console.error('like counter listener error:', err);
+  });
+
+  if(hasLikedThisSession()){
+    setLikedUI();
+  }
+
+  btn.addEventListener('click', async function(){
+    if(hasLikedThisSession()) return;
+
+    markLikedThisSession();
+    btn.classList.remove('pop');
+    void btn.offsetWidth;
+    btn.classList.add('pop');
+    spawnParticle();
+    setLikedUI();
+
+    try{
+      await updateDoc(likesRef, { count: increment(1) });
+      if(typeof showToast === 'function'){
+        showToast('1 row inserted into likes \u2014 thank you!');
+      }
+    }catch(e){
+      console.error('failed to record like:', e);
+    }
+  });
+</script>
+
 <script>
   /* ---------- helpers ---------- */
   function escapeHtml(s){
@@ -1238,79 +1324,7 @@
   }
 
   /* ---------- like widget ---------- */
-  (function(){
-    var LIKES_KEY = 'nvp-likes-total';
-    var LIKED_SESSION_KEY = 'nvp-liked-session';
-    var SEED_LIKES = 0;
-
-    var btn = document.getElementById('like-btn');
-    var pill = document.getElementById('like-count-pill');
-    var countEl = document.getElementById('like-count');
-    if(!btn) return;
-
-    function getTotal(){
-      try{
-        var stored = localStorage.getItem(LIKES_KEY);
-        return stored === null ? SEED_LIKES : parseInt(stored, 10);
-      }catch(e){ return SEED_LIKES; }
-    }
-    function setTotal(n){
-      try{ localStorage.setItem(LIKES_KEY, String(n)); }catch(e){}
-    }
-    function hasLikedThisSession(){
-      try{ return sessionStorage.getItem(LIKED_SESSION_KEY) === '1'; }catch(e){ return false; }
-    }
-    function markLikedThisSession(){
-      try{ sessionStorage.setItem(LIKED_SESSION_KEY, '1'); }catch(e){}
-    }
-
-    function renderCount(n, animate){
-      countEl.textContent = n;
-      if(animate){
-        countEl.classList.remove('bump');
-        void countEl.offsetWidth;
-        countEl.classList.add('bump');
-      }
-    }
-
-    function setLikedUI(){
-      btn.classList.add('liked');
-      btn.setAttribute('aria-pressed', 'true');
-      btn.title = 'already inserted \u2014 thanks!';
-      pill.classList.add('liked');
-    }
-
-    function spawnParticle(){
-      var p = document.createElement('span');
-      p.className = 'like-particle';
-      p.textContent = '+1';
-      btn.appendChild(p);
-      setTimeout(function(){ p.remove(); }, 900);
-    }
-
-    // init from storage
-    var total = getTotal();
-    renderCount(total, false);
-    if(hasLikedThisSession()){
-      setLikedUI();
-    }
-
-    btn.addEventListener('click', function(){
-      if(hasLikedThisSession()) return;
-
-      total = getTotal() + 1;
-      setTotal(total);
-      markLikedThisSession();
-
-      btn.classList.remove('pop');
-      void btn.offsetWidth;
-      btn.classList.add('pop');
-      spawnParticle();
-      renderCount(total, true);
-      setLikedUI();
-      showToast('1 row inserted into likes \u2014 thank you!');
-    });
-  })();
+  /* Live count + click handling now lives in the Firebase module script below. */
 
   /* ---------- project filter chips ---------- */
   function selectChip(chip){
